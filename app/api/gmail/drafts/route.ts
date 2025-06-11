@@ -1,30 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
+import { google } from "googleapis";
+import { loadTokens } from "../tokens";
 
-export async function GET(req: NextRequest) {
-  const token = req.headers.get("authorization")?.split(" ")[1];
+export async function GET() {
+  const userId = "testuser";
+  const tokens = await loadTokens(userId);
 
-  if (!token) {
-    return NextResponse.json(
-      { error: "Missing Authorization token" },
-      { status: 401 }
-    );
-  }
+  if (!tokens) return new Response("No tokens found", { status: 400 });
 
-  const res = await fetch(
-    "https://gmail.googleapis.com/gmail/v1/users/me/drafts?format=full",
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
+  const auth = new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID!,
+    process.env.GMAIL_CLIENT_SECRET!,
+    process.env.GMAIL_REDIRECT_URI!
   );
 
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "Failed to fetch drafts" },
-      { status: res.status }
-    );
-  }
+  auth.setCredentials(tokens);
 
-  const data = await res.json();
+  const gmail = google.gmail({ version: "v1", auth });
 
-  return NextResponse.json(data);
+  const res = await gmail.users.drafts.list({ userId: "me" });
+  return Response.json(res.data);
 }
