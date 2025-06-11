@@ -3,8 +3,12 @@ import path from "path";
 
 const TOKENS_FILE = path.resolve(process.cwd(), "tokens.json");
 
+interface TokenStore {
+  [userId: string]: any;
+}
+
 export async function saveTokens(userId: string, tokens: any) {
-  let existing = {};
+  let existing: TokenStore = {};
 
   if (await fs.pathExists(TOKENS_FILE)) {
     existing = await fs.readJson(TOKENS_FILE);
@@ -19,7 +23,6 @@ export async function loadTokens(userId: string) {
     return null;
   }
 
-  const existing: Record<string, any> = await fs.readJson(TOKENS_FILE);
-
+  const existing: TokenStore = await fs.readJson(TOKENS_FILE);
   return existing[userId] || null;
 }
